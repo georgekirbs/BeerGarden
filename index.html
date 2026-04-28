@@ -7,141 +7,65 @@
     
     <!-- Chart.js for data visualization -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Firebase SDKs (v8 Compat for simple single-file setup) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
     <!-- ========================================== -->
     <!-- SECTION 1: CSS STYLES                      -->
     <!-- ========================================== -->
     <style>
         :root {
-            --bg-color: #fdf6e3;
-            --card-bg: #ffffff;
-            --primary-color: #d97706; 
-            --secondary-color: #fbbf24; 
-            --text-main: #1f2937;
-            --text-light: #6b7280;
-            --border-color: #e5e7eb;
-            --player-1-color: #3b82f6; 
-            --player-2-color: #10b981; 
-            --player-3-color: #8b5cf6; 
+            --bg-color: #fdf6e3; --card-bg: #ffffff;
+            --primary-color: #d97706; --secondary-color: #fbbf24; 
+            --text-main: #1f2937; --text-light: #6b7280; --border-color: #e5e7eb;
+            --player-1-color: #3b82f6; --player-2-color: #10b981; --player-3-color: #8b5cf6; 
         }
 
-        body {
-            font-family: system-ui, -apple-system, sans-serif;
-            text-align: center;
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            margin: 0;
-            padding: 20px 10px;
-        }
+        body { font-family: system-ui, sans-serif; text-align: center; background-color: var(--bg-color); color: var(--text-main); margin: 0; padding: 20px 10px; }
+        h1 { font-size: 2rem; margin-bottom: 5px; }
+        .live-indicator { display: inline-block; width: 10px; height: 10px; background-color: #10b981; border-radius: 50%; margin-bottom: 20px; box-shadow: 0 0 8px #10b981; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
 
-        h1 { font-size: 2rem; margin-bottom: 20px; }
-
-        /* Layout Grids */
-        .grid-3 {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 15px;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        /* Player Cards */
-        .person-card {
-            background: var(--card-bg);
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-            border-top: 5px solid #ccc;
-        }
+        .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; max-width: 1200px; margin: 0 auto; }
+        .person-card { background: var(--card-bg); padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-top: 5px solid #ccc; position: relative; }
         .person-card[data-pid="1"] { border-top-color: var(--player-1-color); }
         .person-card[data-pid="2"] { border-top-color: var(--player-2-color); }
         .person-card[data-pid="3"] { border-top-color: var(--player-3-color); }
-
-        .name-edit {
-            font-size: 1.5rem;
-            border: none;
-            text-align: center;
-            border-bottom: 2px dashed #ccc;
-            width: 90%;
-            background: transparent;
-            font-weight: bold;
-            color: var(--text-main);
-            padding-bottom: 5px;
-        }
+        .name-edit { font-size: 1.5rem; border: none; text-align: center; border-bottom: 2px dashed #ccc; width: 90%; background: transparent; font-weight: bold; color: var(--text-main); padding-bottom: 5px; }
         .name-edit:focus { outline: none; border-bottom-color: var(--primary-color); }
-
-        .score-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 15px;
-            margin: 15px 0;
-        }
+        .score-container { display: flex; justify-content: center; align-items: center; gap: 15px; margin: 15px 0; }
         .score { font-size: 4rem; font-weight: 800; color: var(--text-main); line-height: 1; }
 
-        /* Buttons */
-        button {
-            font-size: 1.1rem;
-            font-weight: bold;
-            padding: 12px 10px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            touch-action: manipulation;
-            width: 100%;
-        }
+        button { font-size: 1.1rem; font-weight: bold; padding: 12px 10px; border: none; border-radius: 8px; cursor: pointer; touch-action: manipulation; width: 100%; }
         .btn-action { background-color: var(--primary-color); color: white; margin-bottom: 10px;}
         .btn-edit-score { background-color: var(--border-color); color: var(--text-main); font-size: 0.9rem; padding: 8px 12px; width: auto; }
         .btn-reset { margin-top: 40px; background-color: #ef4444; color: white; padding: 15px; max-width: 400px; }
         button:active { transform: scale(0.97); }
 
-        /* Modal Styles */
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.5);
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
-            padding: 15px;
-            box-sizing: border-box;
-        }
-        .modal-content {
-            background: var(--card-bg);
-            padding: 25px;
-            border-radius: 12px;
-            width: 100%;
-            max-width: 400px;
-            text-align: left;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-        }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; padding: 15px; box-sizing: border-box; }
+        .modal-content { background: var(--card-bg); padding: 25px; border-radius: 12px; width: 100%; max-width: 400px; text-align: left; }
         .modal-content h2 { margin-top: 0; border-bottom: 2px solid var(--border-color); padding-bottom: 10px; }
         .modal-group { margin-bottom: 15px; }
         .modal-group label { display: block; font-weight: bold; margin-bottom: 5px; color: var(--text-main); }
-        .modal-group select, .modal-group input[type="text"], .modal-group input[type="password"] {
-            width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; box-sizing: border-box;
-        }
+        .modal-group select, .modal-group input[type="text"] { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; box-sizing: border-box; }
         .checkbox-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 5px; }
-        .checkbox-label {
-            background: #f3f4f6; padding: 10px; border-radius: 6px; text-align: center; cursor: pointer;
-            border: 2px solid transparent; transition: 0.2s;
-        }
+        .checkbox-label { background: #f3f4f6; padding: 10px; border-radius: 6px; text-align: center; cursor: pointer; border: 2px solid transparent; }
         .checkbox-label input { display: none; }
         .checkbox-label:has(input:checked) { background: #dbeafe; border-color: #3b82f6; color: #1e3a8a; font-weight: bold; }
         .modal-actions { display: flex; gap: 10px; margin-top: 25px; }
         .btn-cancel { background: #e5e7eb; color: var(--text-main); }
 
-        /* Charts & Logs */
-        .charts-section { background: var(--card-bg); margin: 30px auto; padding: 20px; border-radius: 12px; max-width: 1200px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .charts-section { background: var(--card-bg); margin: 30px auto; padding: 20px; border-radius: 12px; max-width: 1200px; }
         .chart-container { position: relative; height: 300px; width: 100%; margin-bottom: 30px; }
-        .log-column { background: var(--card-bg); padding: 15px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); text-align: left; border-top: 4px solid #ccc; }
+        .log-column { background: var(--card-bg); padding: 15px; border-radius: 12px; text-align: left; border-top: 4px solid #ccc; }
         .log-column[data-pid="1"] { border-top-color: var(--player-1-color); }
         .log-column[data-pid="2"] { border-top-color: var(--player-2-color); }
         .log-column[data-pid="3"] { border-top-color: var(--player-3-color); }
         .log-column h3 { margin-top: 0; text-align: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
         .log-entry { border-bottom: 1px solid #f3f4f6; padding: 10px 0; font-size: 0.9rem; }
-        .log-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px; }
+        .log-header { display: flex; justify-content: space-between; margin-bottom: 4px; }
         .log-drink-name { font-weight: bold; }
         .log-amount { font-weight: bold; color: var(--primary-color); }
         .log-meta { color: var(--text-light); font-size: 0.8rem; display: block; }
@@ -149,20 +73,22 @@
         .log-actions { display: flex; gap: 10px; margin-top: 6px; }
         .action-link { color: #3b82f6; text-decoration: none; font-size: 0.8rem; cursor: pointer; }
         .action-link.delete { color: #ef4444; }
-
+        
+        #loading-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-color); z-index: 9999; display: flex; justify-content: center; align-items: center; font-size: 1.5rem; font-weight: bold; }
     </style>
 </head>
 <body>
+
+    <div id="loading-screen">Connecting to Pub Server... 🍻</div>
 
     <!-- ========================================== -->
     <!-- SECTION 2: HTML STRUCTURE                  -->
     <!-- ========================================== -->
     <h1>🍻 Beer Garden Tally 🍻</h1>
+    <div><span class="live-indicator"></span> Live Sync Active</div>
     
-    <!-- Player Cards Grid -->
     <div id="players-container" class="grid-3"></div>
 
-    <!-- Charts Section -->
     <div class="charts-section">
         <h2>📊 Statistics</h2>
         <div class="grid-3">
@@ -171,24 +97,19 @@
         </div>
     </div>
 
-    <!-- Segmented History Logs -->
     <h2>📋 Player History</h2>
     <div id="logs-container" class="grid-3"></div>
 
     <button class="btn-reset" onclick="factoryReset()">⚠️ Clear All Data</button>
 
-    <!-- Modal for Adding Drinks -->
+    <!-- Modal -->
     <div id="drink-modal" class="modal-overlay">
         <div class="modal-content">
             <h2>🍺 Log Drinks</h2>
-            
             <div class="modal-group">
                 <label>Who is drinking?</label>
-                <div class="checkbox-grid" id="modal-players">
-                    <!-- Populated by JS -->
-                </div>
+                <div class="checkbox-grid" id="modal-players"></div>
             </div>
-
             <div class="modal-group">
                 <label>Location / Round</label>
                 <select id="modal-location" onchange="toggleNewInput('modal-location', 'new-location-container')"></select>
@@ -196,7 +117,6 @@
                     <input type="text" id="new-location-input" placeholder="Type new location name...">
                 </div>
             </div>
-
             <div class="modal-group">
                 <label>Drink</label>
                 <select id="modal-drink" onchange="toggleNewInput('modal-drink', 'new-drink-container')"></select>
@@ -204,7 +124,6 @@
                     <input type="text" id="new-drink-input" placeholder="Type new drink name...">
                 </div>
             </div>
-
             <div class="modal-actions">
                 <button class="btn-cancel" onclick="closeModal()">Cancel</button>
                 <button class="btn-action" onclick="saveDrinkFromModal()" style="margin: 0;">Save Drink</button>
@@ -213,23 +132,66 @@
     </div>
 
     <!-- ========================================== -->
-    <!-- SECTION 3: JAVASCRIPT LOGIC                -->
+    <!-- SECTION 3: JAVASCRIPT LOGIC & FIREBASE     -->
     <!-- ========================================== -->
     <script>
-        // --- State Management ---
-        let state = JSON.parse(localStorage.getItem('beerTallyDataV4')) || {
+        // ---------------------------------------------------------
+        // 🛑 PASTE YOUR FIREBASE CONFIG OBJECT HERE 🛑
+        // ---------------------------------------------------------
+        const firebaseConfig = {
+          apiKey: "AIzaSyC0CM_ld1r79kCccl4LedIWwMj2M-IhSWw",
+          authDomain: "beer-tally-de70c.firebaseapp.com",
+          projectId: "beer-tally-de70c",
+          storageBucket: "beer-tally-de70c.firebasestorage.app",
+          messagingSenderId: "595875751658",
+          appId: "1:595875751658:web:5bf699f0ed9def4c5ad993"
+        };
+        // ---------------------------------------------------------
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        const dbRef = database.ref('beerTallyApp');
+
+        // Global State (Will be synced with Firebase)
+        let state = null;
+        const defaultState = {
             players: [
                 { id: 1, name: "Ben", color: "#3b82f6" },
                 { id: 2, name: "Harry", color: "#10b981" },
                 { id: 3, name: "Kirby", color: "#8b5cf6" }
             ],
             locations: [ { id: "loc_default", name: "The Local Pub" } ],
-            drinks: [ "Guinness", "Lager", "IPA", "Cider" ].sort(), 
+            drinks: [ "Guinness" ], 
             logs: []    
         };
 
         let barChartInstance = null;
         let lineChartInstance = null;
+
+        // --- Firebase Syncing ---
+        // This listens for ANY changes in the database and updates the screen instantly
+        dbRef.on('value', (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                // Ensure logs and drinks exist even if emptied
+                state = data;
+                if (!state.logs) state.logs = [];
+                if (!state.drinks) state.drinks = [];
+            } else {
+                // First time ever loading the app, set up the database
+                state = defaultState;
+                syncToFirebase();
+            }
+            
+            document.getElementById('loading-screen').style.display = 'none';
+            renderUI();
+        });
+
+        function syncToFirebase() {
+            // Push current state to the cloud
+            dbRef.set(state);
+        }
 
         // --- Core Functions ---
         function getPlayerScore(playerId) {
@@ -254,9 +216,7 @@
             
             if (state.logs.length > 0) {
                 locSelect.value = state.logs[state.logs.length - 1].locationId;
-            } else {
-                locSelect.selectedIndex = 0;
-            }
+            } else { locSelect.selectedIndex = 0; }
             toggleNewInput('modal-location', 'new-location-container');
 
             const drinkSelect = document.getElementById('modal-drink');
@@ -271,23 +231,18 @@
             document.getElementById('drink-modal').style.display = 'flex';
         }
 
-        function closeModal() {
-            document.getElementById('drink-modal').style.display = 'none';
-        }
+        function closeModal() { document.getElementById('drink-modal').style.display = 'none'; }
 
         function toggleNewInput(selectId, containerId) {
-            const select = document.getElementById(selectId);
-            const container = document.getElementById(containerId);
-            container.style.display = select.value === "NEW" ? "block" : "none";
+            document.getElementById(containerId).style.display = document.getElementById(selectId).value === "NEW" ? "block" : "none";
         }
 
         function saveDrinkFromModal() {
             const selectedPlayerIds = Array.from(document.querySelectorAll('.player-checkbox:checked')).map(cb => parseInt(cb.value));
             if (selectedPlayerIds.length === 0) return alert("Select at least one person!");
 
-            let locSelect = document.getElementById('modal-location').value;
-            let locationId = locSelect;
-            if (locSelect === "NEW") {
+            let locationId = document.getElementById('modal-location').value;
+            if (locationId === "NEW") {
                 const newLocName = document.getElementById('new-location-input').value.trim();
                 if (!newLocName) return alert("Enter a location name!");
                 locationId = "loc_" + Date.now();
@@ -299,37 +254,23 @@
             if (drinkSelect === "NEW") {
                 drinkName = document.getElementById('new-drink-input').value.trim();
                 if (!drinkName) return alert("Enter a drink name!");
-                
                 const dictCheck = state.drinks.map(d => d.toLowerCase());
                 if (!dictCheck.includes(drinkName.toLowerCase())) {
                     state.drinks.push(drinkName);
                     state.drinks.sort();
                 }
-            } else if (!drinkSelect) {
-                return alert("Select a drink!");
-            }
+            } else if (!drinkSelect) { return alert("Select a drink!"); }
 
             selectedPlayerIds.forEach(pid => {
-                const hasHadDrink = state.logs.some(l => 
-                    l.playerId === pid && 
-                    l.locationId === locationId && 
-                    l.drinkName.toLowerCase() === drinkName.toLowerCase()
-                );
-                
-                const amount = hasHadDrink ? 0.5 : 1.0;
-
+                const hasHadDrink = state.logs.some(l => l.playerId === pid && l.locationId === locationId && l.drinkName.toLowerCase() === drinkName.toLowerCase());
                 state.logs.push({
                     id: Date.now() + Math.random(), 
-                    playerId: pid,
-                    locationId: locationId,
-                    drinkName: drinkName,
-                    amount: amount,
-                    timestamp: new Date().toISOString(),
-                    comment: ""
+                    playerId: pid, locationId: locationId, drinkName: drinkName,
+                    amount: hasHadDrink ? 0.5 : 1.0, timestamp: new Date().toISOString(), comment: ""
                 });
             });
 
-            saveAndRender();
+            syncToFirebase(); // Updates the cloud, which updates everyone's UI
             closeModal();
         }
 
@@ -340,19 +281,14 @@
             const input = prompt(`Current score for ${player.name} is ${currentScore}.\nEnter the correct total score:`, currentScore);
             
             if (input !== null && input.trim() !== "" && !isNaN(input)) {
-                const newScore = parseFloat(input);
-                const difference = newScore - currentScore;
+                const difference = parseFloat(input) - currentScore;
                 if (difference !== 0) {
                     state.logs.push({
-                        id: Date.now(),
-                        playerId: playerId,
-                        locationId: "manual",
-                        drinkName: "Manual Adjustment",
-                        amount: difference,
-                        timestamp: new Date().toISOString(),
-                        comment: "Score manually overridden"
+                        id: Date.now(), playerId: playerId, locationId: "manual",
+                        drinkName: "Manual Adjustment", amount: difference,
+                        timestamp: new Date().toISOString(), comment: "Score manually overridden"
                     });
-                    saveAndRender();
+                    syncToFirebase();
                 }
             }
         }
@@ -361,7 +297,7 @@
             const player = state.players.find(p => p.id === playerId);
             if (player) {
                 player.name = newName;
-                saveData(); 
+                syncToFirebase(); 
             }
         }
 
@@ -371,71 +307,41 @@
                 const newComment = prompt("Enter a note for this drink:", log.comment || "");
                 if (newComment !== null) {
                     log.comment = newComment.trim();
-                    saveAndRender();
+                    syncToFirebase();
                 }
             }
         }
 
         function deleteLogEntry(logId) {
-            if (confirm("Delete this entry? Total scores and charts will update automatically.")) {
+            if (confirm("Delete this entry? Total scores will update everywhere.")) {
                 state.logs = state.logs.filter(l => l.id !== logId);
-                saveAndRender();
+                syncToFirebase();
             }
         }
 
         function factoryReset() {
             const password = prompt("Enter the password to clear all data:");
-            
             if (password === "LittleHarry") {
-                if (confirm("WARNING: Delete ALL history, locations, and scores?")) {
+                if (confirm("WARNING: Delete ALL history, locations, and scores globally?")) {
                     state.logs = [];
                     state.locations = [ { id: "loc_default", name: "The Local Pub" } ];
-                    saveAndRender();
-                    alert("Data cleared successfully.");
+                    syncToFirebase();
+                    alert("Data cleared for all users.");
                 }
-            } else if (password !== null) {
-                alert("Incorrect password. Nice try.");
-            }
+            } else if (password !== null) { alert("Incorrect password."); }
         }
-
-        // --- Storage Functions ---
-        function saveData() { localStorage.setItem('beerTallyDataV4', JSON.stringify(state)); }
-        function saveAndRender() { saveData(); renderUI(); }
 
         // --- UI Rendering & Charts ---
-        function getLocationName(locId) {
-            if (locId === "manual") return "Manual Entry";
-            const loc = state.locations.find(l => l.id === locId);
-            return loc ? loc.name : "Unknown Location";
-        }
-
-        function formatTime(isoString) {
-            return new Date(isoString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        }
-
         function renderCharts() {
             const playerLabels = state.players.map(p => p.name);
             const playerColors = state.players.map(p => p.color);
             const playerScores = state.players.map(p => getPlayerScore(p.id));
 
             if (barChartInstance) barChartInstance.destroy();
-            const ctxBar = document.getElementById('barChart').getContext('2d');
-            barChartInstance = new Chart(ctxBar, {
+            barChartInstance = new Chart(document.getElementById('barChart').getContext('2d'), {
                 type: 'bar',
-                data: {
-                    labels: playerLabels,
-                    datasets: [{
-                        label: 'Total Points',
-                        data: playerScores,
-                        backgroundColor: playerColors,
-                        borderRadius: 6
-                    }]
-                },
-                options: {
-                    responsive: true, maintainAspectRatio: false,
-                    plugins: { legend: { display: false }, title: { display: true, text: 'Current Totals' } },
-                    scales: { y: { beginAtZero: true } }
-                }
+                data: { labels: playerLabels, datasets: [{ label: 'Total Points', data: playerScores, backgroundColor: playerColors, borderRadius: 6 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, title: { display: true, text: 'Current Totals' } }, scales: { y: { beginAtZero: true } } }
             });
 
             if (lineChartInstance) lineChartInstance.destroy();
@@ -450,25 +356,17 @@
                 state.players.forEach(p => runningTotals[p.id].push(currentTotals[p.id]));
             });
 
-            const lineDatasets = state.players.map(p => ({
-                label: p.name, data: runningTotals[p.id],
-                borderColor: p.color, backgroundColor: p.color,
-                tension: 0.3, fill: false
-            }));
+            const lineDatasets = state.players.map(p => ({ label: p.name, data: runningTotals[p.id], borderColor: p.color, backgroundColor: p.color, tension: 0.3, fill: false }));
 
-            const ctxLine = document.getElementById('lineChart').getContext('2d');
-            lineChartInstance = new Chart(ctxLine, {
-                type: 'line',
-                data: { labels: timeLabels, datasets: lineDatasets },
-                options: {
-                    responsive: true, maintainAspectRatio: false,
-                    plugins: { title: { display: true, text: 'Score Progression' } },
-                    scales: { y: { beginAtZero: true } }
-                }
+            lineChartInstance = new Chart(document.getElementById('lineChart').getContext('2d'), {
+                type: 'line', data: { labels: timeLabels, datasets: lineDatasets },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { title: { display: true, text: 'Score Progression' } }, scales: { y: { beginAtZero: true } } }
             });
         }
 
         function renderUI() {
+            if(!state) return; // Wait for Firebase
+
             const playersContainer = document.getElementById('players-container');
             playersContainer.innerHTML = ''; 
 
@@ -476,7 +374,7 @@
                 const displayScore = parseFloat(getPlayerScore(player.id).toFixed(2)); 
                 playersContainer.innerHTML += `
                     <div class="person-card" data-pid="${player.id}">
-                        <input class="name-edit" type="text" value="${player.name}" onchange="updateName(${player.id}, this.value); renderCharts();">
+                        <input class="name-edit" type="text" value="${player.name}" onchange="updateName(${player.id}, this.value)">
                         <div class="score-container">
                             <div class="score">${displayScore}</div>
                             <button class="btn-edit-score" onclick="editTotalScore(${player.id})">✏️ Edit</button>
@@ -491,7 +389,6 @@
 
             state.players.forEach((player) => {
                 const playerLogs = state.logs.filter(l => l.playerId === player.id).reverse(); 
-                
                 let logHTML = `<div class="log-column" data-pid="${player.id}"><h3>${player.name}</h3>`;
                 
                 if (playerLogs.length === 0) {
@@ -499,7 +396,9 @@
                 } else {
                     playerLogs.forEach(log => {
                         const amountText = log.amount > 0 ? `+${log.amount}` : log.amount;
-                        const locName = getLocationName(log.locationId);
+                        const loc = state.locations.find(l => l.id === log.locationId);
+                        const locName = log.locationId === "manual" ? "Manual Entry" : (loc ? loc.name : "Unknown Location");
+                        const time = new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                         
                         logHTML += `
                             <div class="log-entry">
@@ -507,7 +406,7 @@
                                     <span class="log-drink-name">${log.drinkName}</span>
                                     <span class="log-amount">${amountText}</span>
                                 </div>
-                                <span class="log-meta">📍 ${locName} • ${formatTime(log.timestamp)}</span>
+                                <span class="log-meta">📍 ${locName} • ${time}</span>
                                 ${log.comment ? `<div class="log-comment">"${log.comment}"</div>` : ''}
                                 <div class="log-actions">
                                     <a class="action-link" onclick="editLogComment(${log.id})">${log.comment ? 'Edit Note' : '+ Note'}</a>
@@ -523,9 +422,6 @@
 
             renderCharts();
         }
-
-        // --- Initialization ---
-        renderUI();
     </script>
 </body>
 </html>
